@@ -1,0 +1,9 @@
+{
+  "words": [
+    "parkflow", "ParkFlow", "PARKFLOW", "topbar",
+    "cspell", "psql", "postgres", "postgresql",
+    "scram", "nodemon", "dotenv",
+    "timestamptz", "coalesce", "sess", "spaceid",
+    "VITE", "vite"
+  ]
+}
