@@ -1,3 +1,4 @@
+<img width="1914" height="940" alt="Screenshot 2026-11-05 211754" src="https://github.com/user-attachments/assets/4ef2b78c-e964-4fe6-bb06-5bc3968bab9d" />
 # 🅿️ ParkFlow — Parking Management System
 
 A modern, full-stack parking management platform designed to handle real-world facility operations. Features a live interactive floor plan, session lifecycle tracking, reservations, and real-time analytics.
