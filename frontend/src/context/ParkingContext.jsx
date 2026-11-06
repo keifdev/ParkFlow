@@ -21,11 +21,14 @@ export function ParkingProvider({ children }) {
 
   const refresh = useCallback(async () => {
     try {
-      const [spaces, resList, payList, rev] = await Promise.all([
+      // 1. Fetch all data from the backend, including the new recent endpoints
+      const [spaces, resList, payList, rev, recentSessions, recentPayments] = await Promise.all([
         api.getSpaces(),
         api.getReservations(),
         api.getPayments(),
         api.getRevenue(),
+        api.getRecentSessions(),
+        api.getRecentPayments(),
       ]);
 
       setSlots(
@@ -62,6 +65,36 @@ export function ParkingProvider({ children }) {
       );
 
       setRevenue(Number(rev.total));
+
+      // 2. Combine recent sessions and payments into one activity feed
+      const combinedActivity = [
+        ...(recentSessions || []).map((s) => {
+          const isActive = s.status === "active";
+          return {
+            id: `sess-${s.id}`,
+            icon: isActive ? "↗" : "↙",
+            title: isActive ? "Vehicle entered" : "Vehicle exited",
+            description: `${s.plate} ${isActive ? "entered" : "left"} ${s.space_id}`,
+            time: formatTimeAgo(s.exited_at || s.entered_at),
+            type: isActive ? "success" : "exit",
+            timestamp: new Date(s.exited_at || s.entered_at).getTime(),
+          };
+        }),
+        ...(recentPayments || []).map((p) => ({
+          id: `pay-${p.id}`,
+          icon: "₱",
+          title: "Payment received",
+          description: `₱${Number(p.amount).toFixed(2)} from ${p.plate || "Unknown"} (${p.method})`,
+          time: formatTimeAgo(p.created_at),
+          type: "payment",
+          timestamp: new Date(p.created_at).getTime(),
+        })),
+      ];
+
+      // 3. Sort by newest first, take the top 8
+      combinedActivity.sort((a, b) => b.timestamp - a.timestamp);
+      setActivity(combinedActivity.slice(0, 8));
+
       setError(null);
     } catch (e) {
       console.error("API refresh failed:", e);
@@ -77,11 +110,6 @@ export function ParkingProvider({ children }) {
 
   const startSession = async ({ slotId, plate }) => {
     await api.startSession(slotId, plate);
-    pushActivity({
-      icon: "↗", title: "Vehicle entered",
-      description: `${plate} entered ${slotId}`,
-      time: "just now", type: "success",
-    });
     await refresh();
   };
 
@@ -90,58 +118,30 @@ export function ParkingProvider({ children }) {
     const match = active.find((s) => s.space_id === slotId);
     if (!match) return;
     await api.endSession(match.id);
-    pushActivity({
-      icon: "↙", title: "Vehicle exited",
-      description: `${match.plate} left ${slotId}`,
-      time: "just now", type: "exit",
-    });
     await refresh();
   };
 
   const reserveSlot = async ({ slotId, plate, reservedFor }) => {
     await api.createReservation(slotId, plate, reservedFor);
-    pushActivity({
-      icon: "◆", title: "Reservation created",
-      description: `${slotId} reserved for ${plate}`,
-      time: "just now", type: "reserved",
-    });
     await refresh();
   };
 
   const convertReservation = async (reservationId) => {
-    const r = reservations.find((x) => x.id === reservationId);
     await api.convertReservation(reservationId);
-    pushActivity({
-      icon: "↗", title: "Reservation converted",
-      description: `${r?.plate} checked in at ${r?.slotId}`,
-      time: "just now", type: "success",
-    });
     await refresh();
   };
 
   const cancelReservation = async (reservationId) => {
-    const r = reservations.find((x) => x.id === reservationId);
     await api.cancelReservation(reservationId);
-    pushActivity({
-      icon: "✕", title: "Reservation cancelled",
-      description: `${r?.slotId} released`,
-      time: "just now", type: "exit",
-    });
     await refresh();
   };
 
   const recordPayment = async ({ slotId, plate, amount, method }) => {
     await api.recordPayment({ spaceId: slotId, plate, amount, method });
-    pushActivity({
-      icon: "₱", title: "Payment received",
-      description: `₱${Number(amount).toFixed(2)} from ${plate} (${method})`,
-      time: "just now", type: "payment",
-    });
     await refresh();
   };
 
   const resetData = async () => {
-    // DB is source of truth now. Reset = re-seed (run `npm run seed` in backend).
     await refresh();
   };
 
@@ -173,6 +173,16 @@ function formatDuration(enteredAt) {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return `${h}h ${m}m`;
+}
+
+function formatTimeAgo(dateStr) {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
 export function useParking() {
