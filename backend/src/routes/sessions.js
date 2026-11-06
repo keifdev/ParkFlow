@@ -14,6 +14,17 @@ router.get("/active", async (req, res) => {
   res.json(rows);
 });
 
+// NEW: Fetch recent sessions for the activity feed
+router.get("/recent", async (req, res) => {
+  const { rows } = await query(`
+    SELECT id, space_id, plate, entered_at, exited_at, status
+    FROM sessions
+    ORDER BY COALESCE(exited_at, entered_at) DESC
+    LIMIT 10
+  `);
+  res.json(rows);
+});
+
 router.post("/start", async (req, res) => {
   const { spaceId, plate } = req.body;
   if (!spaceId || !plate)

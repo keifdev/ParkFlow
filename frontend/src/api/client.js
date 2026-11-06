@@ -13,8 +13,10 @@ async function request(path, options = {}) {
 }
 
 export const api = {
+  // Spaces
   getSpaces: () => request("/spaces"),
 
+  // Sessions
   startSession: (spaceId, plate) =>
     request("/sessions/start", {
       method: "POST",
@@ -23,7 +25,9 @@ export const api = {
   endSession: (id) =>
     request(`/sessions/${id}/end`, { method: "POST" }),
   getActiveSessions: () => request("/sessions/active"),
+  getRecentSessions: () => request("/sessions/recent"),
 
+  // Reservations
   getReservations: () => request("/reservations"),
   createReservation: (spaceId, plate, reservedFor) =>
     request("/reservations", {
@@ -35,7 +39,9 @@ export const api = {
   cancelReservation: (id) =>
     request(`/reservations/${id}/cancel`, { method: "POST" }),
 
+  // Payments
   getPayments: () => request("/payments"),
+  getRecentPayments: () => request("/payments/recent"),
   getRevenue: () => request("/payments/revenue"),
   recordPayment: (payload) =>
     request("/payments", {
