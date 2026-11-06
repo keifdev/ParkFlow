@@ -2,9 +2,9 @@
 
 A modern, full-stack parking management platform designed to handle real-world facility operations. Features a live interactive floor plan, session lifecycle tracking, reservations, and real-time analytics.
 
-> **Live Demo:** *Coming Soon (Deploying to Vercel)*
+> **Live Demo:** *Coming Soon*
 
-![Dashboard Preview](https://via.placeholder.com/1200x600/0b0f1a/4f8cff?text=ParkFlow+Dashboard+Preview)
+![Dashboard Preview](./dashboard.png)
 
 ## ✨ Features
 - **Live Floor Plan:** Interactive grid showing Available, Occupied, and Reserved slots.
